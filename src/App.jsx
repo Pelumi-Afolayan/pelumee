@@ -9,6 +9,19 @@ const dimensions = [
   { id: '04', title: 'Academic journey', word: 'GROW', label: 'Learning, always', text: 'B.Sc. Computer Science, Redeemer’s University. First Class, 4.88/5.00 CGPA, graduating October 2026, with four Dean’s List recognitions.', tags: ['Computer Science', 'First Class', '4.88 / 5.00'] },
 ]
 
+// A small, editable vocabulary drawn from the portfolio brief.
+const floatingIdeas = [
+  { text: 'Photography', x: -.3, y: -.22 },
+  { text: 'Front-end development', x: .19, y: -.15 },
+  { text: 'Shoots', x: -.22, y: .17 },
+  { text: 'Visual storytelling', x: .16, y: .24 },
+  { text: 'Computer Science', x: -.28, y: -.04 },
+  { text: 'Cybersecurity', x: .21, y: -.3 },
+  { text: 'Academics', x: -.13, y: .32 },
+  { text: 'Ideas into interfaces', x: .14, y: .08 },
+  { text: 'Curiosity', x: -.19, y: -.29 },
+]
+
 const personalSections = {
   about: { id: '05', title: 'About me', text: 'A space for the person beyond the work. Personal stories, interests, and a few things you might not expect — coming later.', tags: ['Personal space', 'Content coming later'] },
   contact: { id: '06', title: 'Contact', text: 'A place to start a conversation. Contact details and social links will be added here later.', tags: ['Get in touch', 'Details coming later'] },
@@ -49,35 +62,58 @@ export default function App() {
     if (stage === 'entering') { timeline.current?.progress(1); return }
     if (quiet || skip || imageError) { finish(); return }
     setStage('entering')
-    // Anchor the camera to the entry marker, including the responsive portrait crop.
+    // Camera and pixels share the temple as their origin, moving towards the
+    // viewport centre together. No replacement photograph or separate pixel scene.
     const scope = gsap.utils.selector(root)
     const frame = root.current.querySelector('.portrait-frame').getBoundingClientRect()
     const marker = root.current.querySelector('.enter-button').getBoundingClientRect()
-    gsap.set(scope('.portrait-frame'), { transformOrigin: `${(marker.left + marker.width / 2 - frame.left) / frame.width * 100}% ${(marker.top + marker.height / 2 - frame.top) / frame.height * 100}%` })
+    const origin = { x: marker.left + marker.width / 2, y: marker.top + marker.height / 2 }
+    const centre = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+    gsap.set(scope('.portrait-frame'), { transformOrigin: `${(origin.x - frame.left) / frame.width * 100}% ${(origin.y - frame.top) / frame.height * 100}%` })
+    gsap.set(scope('.pixel-field'), { left: origin.x, top: origin.y })
     timeline.current = gsap.timeline()
-      .to(scope('.intro-copy, .intro-bottom, .portrait-note, .enter-button'), { opacity: 0, duration: .35, stagger: .03 })
-      .to(scope('.portrait-frame'), { scale: 9, duration: 2, ease: 'power3.inOut' }, .15)
-      .to(scope('.threshold'), { opacity: 1, duration: .7 }, 1)
-      .set(scope('.pixel-journey'), { opacity: 1 }, 1.1)
-      .fromTo(scope('.journey-caption'), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: .4 }, 1.2)
-      .fromTo(scope('.journey-pixel'), { x: 0, y: 0, scale: .1, opacity: 0 }, {
-        x: (i) => Math.cos(i * 2.399) * (110 + (i % 9) * 65),
-        y: (i) => Math.sin(i * 2.399) * (100 + (i % 7) * 70),
-        scale: (i) => 1 + (i % 5) * .65,
-        rotation: (i) => (i % 3 - 1) * 90,
-        opacity: 1, duration: 2, stagger: .012, ease: 'power2.out',
-      }, 1.15)
-      .to(scope('.journey-pixel'), { x: (i) => Math.cos(i * 2.399) * (170 + (i % 9) * 80), y: (i) => Math.sin(i * 2.399) * (140 + (i % 7) * 85), rotation: '+=35', duration: 2.1, ease: 'sine.inOut' }, 3)
-      .to(scope('.journey-caption'), { opacity: 0, duration: .5 }, 5.1)
-      .call(finish, [], 5.5)
-      .to(scope('.journey-pixel'), { opacity: 0, scale: 4, duration: .8, stagger: .003 }, 5.2)
-      .to(scope('.pixel-journey'), { opacity: 0, duration: 1.05 }, 5.55)
+      .set(scope('.pixel-journey'), { opacity: 1 }, 0)
+      .to(scope('.intro-copy, .intro-bottom, .portrait-note, .enter-button'), { opacity: 0, duration: .35, stagger: .03 }, 0)
+      .to(scope('.portrait-frame'), {
+        scale: 9, x: centre.x - origin.x, y: centre.y - origin.y,
+        duration: 4, ease: 'power2.inOut',
+      }, 0)
+      .to(scope('.pixel-field'), { left: centre.x, top: centre.y, duration: 4, ease: 'power2.inOut' }, 0)
+      .fromTo(scope('.journey-pixel'), { x: 0, y: 0, scale: .15, opacity: 0 }, {
+        keyframes: [
+          { opacity: 1, scale: .8, duration: .16 },
+          { x: (i) => Math.cos(i * 2.399) * window.innerWidth * (.5 + (i % 7) * .08),
+            y: (i) => Math.sin(i * 2.399) * window.innerHeight * (.45 + (i % 9) * .06),
+            scale: (i) => 2 + i % 5, rotation: (i) => (i % 3 - 1) * 65,
+            duration: 3.05, ease: 'power2.in', },
+          { opacity: 0, duration: .4 },
+        ], stagger: .006,
+      }, .08)
+      .to(scope('.threshold'), { opacity: .8, duration: .9 }, 3.05)
+      .call(finish, [], 4)
+      .to(scope('.pixel-journey'), { opacity: 0, duration: .5 }, 4)
 
+    // Stagger readable thoughts through separate depth lanes while the zoom runs.
+    // Each one has its own arrival, drift, and departure before the hub appears.
+    scope('.journey-idea').forEach((element, index) => {
+      const idea = floatingIdeas[index]
+      const driftX = idea.x * window.innerWidth
+      const driftY = idea.y * window.innerHeight
+      const halfWidth = Math.min(element.offsetWidth * .65, window.innerWidth / 2 - 16)
+      const safeX = (x) => gsap.utils.clamp(halfWidth + 12, window.innerWidth - halfWidth - 12, x)
+      timeline.current.fromTo(element,
+        { xPercent: -50, yPercent: -50, x: safeX(origin.x + driftX * .25), y: origin.y + driftY * .25, scale: .65, opacity: 0, filter: 'blur(5px)' },
+        { keyframes: [
+          { opacity: .95, filter: 'blur(0px)', scale: .9, x: safeX(centre.x + driftX * .55), y: centre.y + driftY * .55, duration: .3 },
+          { x: safeX(centre.x + driftX), y: centre.y + driftY, scale: 1.1, duration: .95, ease: 'sine.out' },
+          { opacity: 0, x: safeX(centre.x + driftX * 1.35), y: centre.y + driftY * 1.35, scale: 1.3, filter: 'blur(4px)', duration: .4 },
+        ] }, .25 + index * .23)
+    })
   }
 
   function replay() {
     timeline.current?.kill()
-    gsap.set(root.current.querySelectorAll('.intro, .intro-copy, .intro-bottom, .portrait-note, .portrait-frame, .threshold, .enter-button, .pixel-journey, .journey-pixel, .journey-caption'), { clearProps: 'transform,transformOrigin,opacity' })
+    gsap.set(root.current.querySelectorAll('.intro, .intro-copy, .intro-bottom, .portrait-note, .portrait-frame, .threshold, .enter-button, .pixel-journey, .journey-pixel, .journey-idea, .pixel-field'), { clearProps: 'transform,transformOrigin,opacity,left,top' })
     setStage('intro')
     requestAnimationFrame(() => root.current.querySelector('.enter-button')?.focus())
   }
@@ -120,7 +156,7 @@ export default function App() {
           <footer className="mind-footer"><span>AFOLAYAN JESUPELUMI</span><span>THE EXPLORATION HAS JUST BEGUN — PORTRAIT STUDY / 02</span></footer>
         </section>}
       </main>
-      <div className="pixel-journey" aria-hidden="true"><div className="pixel-field">{Array.from({ length: 100 }, (_, i) => <span className="journey-pixel" key={i} style={{ '--pixel-color': i % 5 === 0 ? '#e9a36d' : i % 3 === 0 ? '#f4dfaa' : '#a7c3b1' }} />)}</div><p className="journey-caption">THOUGHTS TAKING SHAPE<span>ENTERING MY MIND / FOLLOW THE FRAGMENTS</span></p></div>
+      <div className="pixel-journey" aria-hidden="true"><div className="pixel-field">{Array.from({ length: 100 }, (_, i) => <span className="journey-pixel" key={i} style={{ '--pixel-color': i % 5 === 0 ? '#e9a36d' : i % 3 === 0 ? '#f4dfaa' : '#a7c3b1' }} />)}</div><div className="thought-field">{floatingIdeas.map((idea, i) => <span className={`journey-idea journey-idea-${i % 3}`} key={idea.text}>{idea.text}</span>)}</div></div>
       <button className="motion-toggle" aria-pressed={quiet} onClick={() => { if (!quiet) timeline.current?.progress(1); setQuiet(!quiet) }}>Motion {quiet ? 'off' : 'on'} <span aria-hidden="true">{quiet ? '○' : '◉'}</span></button>
       <dialog ref={dialog} className={`dimension-dialog ${quiet ? 'dialog-quiet' : ''}`} aria-labelledby="dimension-title" onCancel={(e) => { e.preventDefault(); closeDimension() }} onClick={(e) => { if (e.target === e.currentTarget) closeDimension() }}>
         {selected && <article><div className="dialog-top"><span className="eyebrow">{Number(selected.id) > 4 ? 'PERSONAL SPACE' : 'DIMENSION'} / {selected.id}</span><button className="text-button" onClick={closeDimension} autoFocus>Close ×</button></div><h2 id="dimension-title">{selected.title}</h2><p>{selected.text}</p><div className="tags">{selected.tags.map(tag => <span key={tag}>{tag}</span>)}</div><p className="prototype-note">{Number(selected.id) > 4 ? 'This section is reserved. We’ll fill it in later.' : 'A glimpse for now. The full portfolio follows in the next stage.'}</p></article>}
@@ -128,6 +164,7 @@ export default function App() {
     </div>
   )
 }
+
 
 
 
