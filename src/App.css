@@ -71,3 +71,5 @@ h1 sup{right:0;top:-12px;margin-left:0;font-size:8px}
 .journey-idea-1{font-family:Georgia,serif;font-style:italic;color:#e9c99b}.journey-idea-2{font-family:Consolas,monospace;font-size:clamp(13px,1.6vw,23px);letter-spacing:.5px;color:#c8dfd0}
 @media(max-width:640px){.journey-idea{font-size:18px;letter-spacing:-.4px}.journey-idea-2{font-size:13px}.journey-idea-1{font-size:20px}}
 .thought-field{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+/* Three dimensions: development, photography, academic journey. */
+.mind-map .dimension-04{grid-column:1 / -1;grid-row:2;justify-self:center;width:240px}.mind-map .dimension-02 .dimension-word{font-size:29px;letter-spacing:-1.5px}@media(max-width:1000px){.mind-map .dimension-04{width:200px}.mind-map .dimension-02 .dimension-word{font-size:25px}}@media(max-width:640px){.mind-map .dimension-04{width:calc((100% - 35px) / 2)}.mind-map .dimension-02 .dimension-word{font-size:21px}}

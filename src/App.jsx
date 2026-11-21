@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import './App.css'
+import PhotoDrum from './components/PhotoDrum'
+import { photos } from './data/photos'
+import ProjectBrowser from './components/ProjectBrowser'
+import { projects } from './data/projects'
 
 const dimensions = [
-  { id: '01', title: 'Development', word: 'BUILD', label: 'Interfaces & useful ideas', text: 'I build digital experiences with React and JavaScript. My work includes Expensidify, the Legacy of Lights digital yearbook, and Tuni Creation.', tags: ['React', 'JavaScript', 'Front-end development'] },
-  { id: '02', title: 'Photography', word: 'SEE', label: 'Light, people & perspective', text: 'Photography is another way I explore ideas: through light, composition, and the details that are easy to miss. A curated gallery of my photographs will live here in the next stage.', tags: ['Visual storytelling', 'Composition', 'Photography'] },
-  { id: '03', title: 'Cyber & privacy', word: 'THINK', label: 'Curiosity with responsibility', text: 'During my undergraduate internship with KPMG Nigeria’s Cyber & Privacy team, I observed and supported vulnerability documentation, reporting, and data protection work.', tags: ['VAPT exposure', 'Privacy documentation', 'ISC2 CC'] },
-  { id: '04', title: 'Academic journey', word: 'GROW', label: 'Learning, always', text: 'B.Sc. Computer Science, Redeemer’s University. First Class, 4.88/5.00 CGPA, graduating October 2026, with four Dean’s List recognitions.', tags: ['Computer Science', 'First Class', '4.88 / 5.00'] },
+  { id: '01', title: 'Development', word: 'BUILD', label: 'Interfaces & useful ideas', text: 'I build digital experiences with React and JavaScript. My work includes Expensidify, the Legacy of Lights digital yearbook, and Tuni Creation. My work experience includes an undergraduate internship with KPMG Nigeria’s Cyber & Privacy team, observing and supporting vulnerability documentation, reporting, and data protection work.', tags: ['React', 'JavaScript', 'Front-end development', 'Cyber & Privacy experience'] },
+  { id: '02', title: 'Photography', word: 'CAPTURE', label: 'Light, people & perspective', text: 'Photography is another way I explore ideas: through light, composition, and the details that are easy to miss. A curated gallery of my photographs will live here in the next stage.', tags: ['Visual storytelling', 'Composition', 'Photography'] },
+  { id: '04', title: 'Academic journey', word: 'LEARN', label: 'Learning, always', text: 'B.Sc. Computer Science, Redeemer’s University. First Class, 4.88/5.00 CGPA, graduating October 2026, with four Dean’s List recognitions.', tags: ['Computer Science', 'First Class', '4.88 / 5.00'] },
 ]
 
 // A small, editable vocabulary drawn from the portfolio brief.
@@ -37,6 +40,8 @@ export default function App() {
   const lastTrigger = useRef(null)
   const [stage, setStage] = useState(() => readVisited() ? 'inside' : 'intro')
   const [selected, setSelected] = useState(null)
+  const [captureOpen, setCaptureOpen] = useState(false)
+  const [buildOpen, setBuildOpen] = useState(false)
   const [quiet, setQuiet] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const [imageReady, setImageReady] = useState(false)
   const [imageError, setImageError] = useState(false)
@@ -118,11 +123,18 @@ export default function App() {
     requestAnimationFrame(() => root.current.querySelector('.enter-button')?.focus())
   }
 
-  function openDimension(item, event) { lastTrigger.current = event.currentTarget; setSelected(item) }
+  function openDimension(item, event) {
+    lastTrigger.current = event.currentTarget
+    if (item.id === '01') setBuildOpen(true)
+    else if (item.id === '02') setCaptureOpen(true)
+    else setSelected(item)
+  }
+  function closeCapture() { setCaptureOpen(false); requestAnimationFrame(() => lastTrigger.current?.focus()) }
   function closeDimension() { dialog.current?.close(); setSelected(null); lastTrigger.current?.focus() }
 
   return (
-    <div ref={root} className={`experience ${stage === 'inside' ? 'is-inside' : ''} ${quiet ? 'quiet' : ''} ${stage === 'intro' ? 'intro-arrival' : ''}`}>
+    <>
+    <div inert={captureOpen || buildOpen ? true : undefined} ref={root} className={`experience ${stage === 'inside' ? 'is-inside' : ''} ${quiet ? 'quiet' : ''} ${stage === 'intro' ? 'intro-arrival' : ''}`}>
       <header className="site-header flex items-center justify-between">
         <button className="monogram" onClick={replay} aria-label="Return to introduction">JP<span>®</span></button>
         <span className="header-label">A PERSONAL EXPLORATION</span>
@@ -146,11 +158,11 @@ export default function App() {
         </section>
 
         {stage === 'inside' && <section className="mind" aria-labelledby="mind-heading">
-          <div className="mind-heading"><p className="eyebrow"><span className="status-dot" /> THE WORLD WITHIN</p><h2 id="mind-heading" ref={heading} tabIndex={-1}>Still me.<br /><em>A little closer.</em></h2><p className="mind-description">Four dimensions, connected by curiosity.<br />Tap a part of my mind to open it.</p></div>
+          <div className="mind-heading"><p className="eyebrow"><span className="status-dot" /> THE WORLD WITHIN</p><h2 id="mind-heading" ref={heading} tabIndex={-1}>Still me.<br /><em>A little closer.</em></h2><p className="mind-description">Three dimensions, connected by curiosity.<br />Tap a part of my mind to open it.</p></div>
           <div className="mind-map">
-            <div className="mind-portrait"><img src="/images/portrait.jpg" alt="The same side-profile portrait, connecting the four areas of my mind" /><span className="mind-centre" aria-hidden="true">+</span></div>
-            <svg className="mind-connections" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"><path d="M 210 145 L 340 145 L 520 275 M 790 145 L 690 145 L 520 275 M 210 470 L 340 470 L 520 275 M 790 470 L 690 470 L 520 275" /><circle cx="520" cy="275" r="12" /><circle cx="520" cy="275" r="26" /></svg>
-            <div className="dimensions">{dimensions.map((item) => <button key={item.id} className={`dimension dimension-${item.id}`} onClick={(e) => openDimension(item, e)}><span className="dimension-meta"><span>{item.id} / {item.title.toUpperCase()}</span><span>↗</span></span><span className="dimension-symbol" aria-hidden="true">{item.id === '01' ? '</>' : item.id === '02' ? '◎' : item.id === '03' ? '⌘' : '4.88'}</span><span className="dimension-word">{item.word}</span><span className="dimension-label">{item.label}</span><span className="open-hint">TAP TO EXPLORE ↗</span></button>)}</div>
+            <div className="mind-portrait"><img src="/images/portrait.jpg" alt="The same side-profile portrait, connecting the three areas of my mind" /><span className="mind-centre" aria-hidden="true">+</span></div>
+            <svg className="mind-connections" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"><path d="M 210 145 L 340 145 L 520 275 M 790 145 L 690 145 L 520 275 M 500 470 L 520 275" /><circle cx="520" cy="275" r="12" /><circle cx="520" cy="275" r="26" /></svg>
+            <div className="dimensions">{dimensions.map((item, index) => <button key={item.id} className={`dimension dimension-${item.id}`} onClick={(e) => openDimension(item, e)}><span className="dimension-meta"><span>{String(index + 1).padStart(2, '0')} / {item.title.toUpperCase()}</span><span>↗</span></span><span className="dimension-symbol" aria-hidden="true">{item.id === '01' ? '</>' : item.id === '02' ? '◎' : item.id === '03' ? '⌘' : '4.88'}</span><span className="dimension-word">{item.word}</span><span className="dimension-label">{item.label}</span><span className="open-hint">TAP TO EXPLORE ↗</span></button>)}</div>
             <p className="map-caption">ONE MIND / MANY POSSIBILITIES</p>
           </div>
           <footer className="mind-footer"><span>AFOLAYAN JESUPELUMI</span><span>THE EXPLORATION HAS JUST BEGUN — PORTRAIT STUDY / 02</span></footer>
@@ -162,9 +174,11 @@ export default function App() {
         {selected && <article><div className="dialog-top"><span className="eyebrow">{Number(selected.id) > 4 ? 'PERSONAL SPACE' : 'DIMENSION'} / {selected.id}</span><button className="text-button" onClick={closeDimension} autoFocus>Close ×</button></div><h2 id="dimension-title">{selected.title}</h2><p>{selected.text}</p><div className="tags">{selected.tags.map(tag => <span key={tag}>{tag}</span>)}</div><p className="prototype-note">{Number(selected.id) > 4 ? 'This section is reserved. We’ll fill it in later.' : 'A glimpse for now. The full portfolio follows in the next stage.'}</p></article>}
       </dialog>
     </div>
+    {buildOpen && <ProjectBrowser projects={projects} motionOff={quiet} onMotionChange={() => setQuiet(value => !value)} onClose={() => { setBuildOpen(false); requestAnimationFrame(() => lastTrigger.current?.focus()) }} />}
+    {captureOpen && <PhotoDrum photos={photos} onClose={closeCapture} motionOff={quiet} onMotionChange={() => setQuiet(value => !value)} />}
+    </>
   )
 }
-
 
 
 
