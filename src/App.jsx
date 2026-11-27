@@ -5,6 +5,8 @@ import PhotoDrum from './components/PhotoDrum'
 import { photos } from './data/photos'
 import ProjectBrowser from './components/ProjectBrowser'
 import { projects } from './data/projects'
+import Field, { FIELD_PIXELS } from './components/Field'
+import PersonalPage from './components/PersonalPage'
 
 const dimensions = [
   { id: '01', title: 'Development', word: 'BUILD', label: 'Interfaces & useful ideas', text: 'I build digital experiences with React and JavaScript. My work includes Expensidify, the Legacy of Lights digital yearbook, and Tuni Creation. My work experience includes an undergraduate internship with KPMG Nigeria’s Cyber & Privacy team, observing and supporting vulnerability documentation, reporting, and data protection work.', tags: ['React', 'JavaScript', 'Front-end development', 'Cyber & Privacy experience'] },
@@ -25,21 +27,20 @@ const floatingIdeas = [
   { text: 'Curiosity', x: -.19, y: -.29 },
 ]
 
-const personalSections = {
-  about: { id: '05', title: 'About me', text: 'A space for the person beyond the work. Personal stories, interests, and a few things you might not expect — coming later.', tags: ['Personal space', 'Content coming later'] },
-  contact: { id: '06', title: 'Contact', text: 'A place to start a conversation. Contact details and social links will be added here later.', tags: ['Get in touch', 'Details coming later'] },
-}
-
 function readVisited() { try { return sessionStorage.getItem('aj-entered') === 'yes' } catch { return false } }
 
 export default function App() {
   const root = useRef(null)
   const timeline = useRef(null)
-  const heading = useRef(null)
+  const field = useRef(null)
   const dialog = useRef(null)
   const lastTrigger = useRef(null)
+  const personalTrigger = useRef(null)
   const [stage, setStage] = useState(() => readVisited() ? 'inside' : 'intro')
+  const [fieldVisible, setFieldVisible] = useState(() => readVisited())
+  const [handoff, setHandoff] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [personalOpen, setPersonalOpen] = useState(null)
   const [captureOpen, setCaptureOpen] = useState(false)
   const [buildOpen, setBuildOpen] = useState(false)
   const [quiet, setQuiet] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -58,9 +59,10 @@ export default function App() {
   }, [selected])
 
   function finish() {
+    setFieldVisible(true)
     setStage('inside')
     try { sessionStorage.setItem('aj-entered', 'yes') } catch { /* Storage is optional. */ }
-    requestAnimationFrame(() => heading.current?.focus())
+    requestAnimationFrame(() => field.current?.focus())
   }
 
   function enter(skip = false) {
@@ -90,13 +92,34 @@ export default function App() {
           { x: (i) => Math.cos(i * 2.399) * window.innerWidth * (.5 + (i % 7) * .08),
             y: (i) => Math.sin(i * 2.399) * window.innerHeight * (.45 + (i % 9) * .06),
             scale: (i) => 2 + i % 5, rotation: (i) => (i % 3 - 1) * 65,
-            duration: 3.05, ease: 'power2.in', },
-          { opacity: 0, duration: .4 },
+            duration: 2.65, ease: 'power2.in', },
         ], stagger: .006,
       }, .08)
       .to(scope('.threshold'), { opacity: .8, duration: .9 }, 3.05)
-      .call(finish, [], 4)
-      .to(scope('.pixel-journey'), { opacity: 0, duration: .5 }, 4)
+      .call(() => { setHandoff(true); setFieldVisible(true) }, [], 3.05)
+      .to(scope('.portrait-frame'), { opacity: 0, duration: 1.05, ease: 'power2.inOut' }, 3.25)
+      .to(scope('.intro'), { backgroundColor: 'rgba(242,241,236,0)', duration: .8 }, 3.55)
+      .to(scope('.threshold'), { opacity: 0, duration: .85 }, 3.6)
+      .to(scope('.journey-pixel'), {
+        x: i => (FIELD_PIXELS[i % FIELD_PIXELS.length].x / 100 - .5) * innerWidth * (innerWidth > 760 ? 1.16 : 1),
+        y: i => (FIELD_PIXELS[i % FIELD_PIXELS.length].y / 100 - .5) * innerHeight * (innerWidth > 760 ? 1.16 : 1),
+        scale: i => i < FIELD_PIXELS.length ? FIELD_PIXELS[i].size / 11 : .1,
+        rotation: 0, opacity: i => i < FIELD_PIXELS.length ? .6 : 0,
+        duration: 1.4, ease: 'power3.out', stagger: .001,
+      }, 3.45)
+      .fromTo(scope('.silhouette-fragment'), {
+        x: i => Math.cos(i * 2.399) * innerWidth * .18,
+        y: i => Math.sin(i * 2.399) * innerHeight * .35,
+        scale: .5, opacity: 0,
+      }, {
+        keyframes: [
+          { opacity: .8, scale: 1.4, duration: .15 },
+          { x: i => (FIELD_PIXELS[i].x / 100 - .5) * innerWidth, y: i => (FIELD_PIXELS[i].y / 100 - .5) * innerHeight, scale: .4, opacity: .3, duration: .95, ease: 'power3.out' },
+          { opacity: 0, duration: .35 },
+        ], stagger: .008,
+      }, 3.2)
+      .to(scope('.pixel-journey'), { opacity: 0, duration: .35 }, 4.6)
+      .call(finish, [], 4.95)
 
     // Stagger readable thoughts through separate depth lanes while the zoom runs.
     // Each one has its own arrival, drift, and departure before the hub appears.
@@ -118,27 +141,33 @@ export default function App() {
 
   function replay() {
     timeline.current?.kill()
-    gsap.set(root.current.querySelectorAll('.intro, .intro-copy, .intro-bottom, .portrait-note, .portrait-frame, .threshold, .enter-button, .pixel-journey, .journey-pixel, .journey-idea, .pixel-field'), { clearProps: 'transform,transformOrigin,opacity,left,top' })
+    gsap.set(root.current.querySelectorAll('.intro, .intro-copy, .intro-bottom, .portrait-note, .portrait-frame, .threshold, .enter-button, .pixel-journey, .journey-pixel, .journey-idea, .pixel-field, .silhouette-fragment'), { clearProps: 'transform,transformOrigin,opacity,left,top,backgroundColor' })
+    setFieldVisible(false)
+    setHandoff(false)
     setStage('intro')
     requestAnimationFrame(() => root.current.querySelector('.enter-button')?.focus())
   }
 
+  function openPersonal(section, event) { personalTrigger.current = event.currentTarget; setPersonalOpen(section) }
+  function closePersonal() { setPersonalOpen(null); requestAnimationFrame(() => personalTrigger.current?.focus()) }
   function openDimension(item, event) {
     lastTrigger.current = event.currentTarget
     if (item.id === '01') setBuildOpen(true)
     else if (item.id === '02') setCaptureOpen(true)
     else setSelected(item)
   }
-  function closeCapture() { setCaptureOpen(false); requestAnimationFrame(() => lastTrigger.current?.focus()) }
-  function closeDimension() { dialog.current?.close(); setSelected(null); lastTrigger.current?.focus() }
+  function enterRegion(id, button) { openDimension(dimensions.find(item => item.id === id), { currentTarget: button }) }
+  function returnToField() { requestAnimationFrame(() => field.current?.returnToField()) }
+  function closeCapture() { setCaptureOpen(false); returnToField() }
+  function closeDimension() { const region = selected?.id === '04'; dialog.current?.close(); setSelected(null); if (region) returnToField(); else lastTrigger.current?.focus() }
 
   return (
     <>
-    <div inert={captureOpen || buildOpen ? true : undefined} ref={root} className={`experience ${stage === 'inside' ? 'is-inside' : ''} ${quiet ? 'quiet' : ''} ${stage === 'intro' ? 'intro-arrival' : ''}`}>
+    <div inert={captureOpen || buildOpen || personalOpen ? true : undefined} ref={root} className={`experience ${fieldVisible ? 'has-field' : ''} ${handoff && stage !== 'inside' ? 'field-handoff' : ''} ${stage === 'inside' ? 'is-inside' : ''} ${quiet ? 'quiet' : ''} ${stage === 'intro' ? 'intro-arrival' : ''}`}>
       <header className="site-header flex items-center justify-between">
         <button className="monogram" onClick={replay} aria-label="Return to introduction">JP<span>®</span></button>
         <span className="header-label">A PERSONAL EXPLORATION</span>
-        <nav className="personal-nav" aria-label="Personal navigation"><button onClick={(e) => openDimension(personalSections.about, e)}>About me</button><button onClick={(e) => openDimension(personalSections.contact, e)}>Contact ↗</button></nav>
+        <nav className="personal-nav" aria-label="Personal navigation"><button onClick={(e) => openPersonal('about', e)}>About me</button><button onClick={(e) => openPersonal('contact', e)}>Contact ↗</button></nav>
         <button className="text-button" onClick={() => stage === 'inside' ? replay() : enter(true)}>{stage === 'inside' ? 'Replay introduction ↗' : 'Skip introduction ↗'}</button>
       </header>
 
@@ -157,24 +186,18 @@ export default function App() {
           <div className="threshold" aria-hidden="true" />
         </section>
 
-        {stage === 'inside' && <section className="mind" aria-labelledby="mind-heading">
-          <div className="mind-heading"><p className="eyebrow"><span className="status-dot" /> THE WORLD WITHIN</p><h2 id="mind-heading" ref={heading} tabIndex={-1}>Still me.<br /><em>A little closer.</em></h2><p className="mind-description">Three dimensions, connected by curiosity.<br />Tap a part of my mind to open it.</p></div>
-          <div className="mind-map">
-            <div className="mind-portrait"><img src="/images/portrait.jpg" alt="The same side-profile portrait, connecting the three areas of my mind" /><span className="mind-centre" aria-hidden="true">+</span></div>
-            <svg className="mind-connections" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"><path d="M 210 145 L 340 145 L 520 275 M 790 145 L 690 145 L 520 275 M 500 470 L 520 275" /><circle cx="520" cy="275" r="12" /><circle cx="520" cy="275" r="26" /></svg>
-            <div className="dimensions">{dimensions.map((item, index) => <button key={item.id} className={`dimension dimension-${item.id}`} onClick={(e) => openDimension(item, e)}><span className="dimension-meta"><span>{String(index + 1).padStart(2, '0')} / {item.title.toUpperCase()}</span><span>↗</span></span><span className="dimension-symbol" aria-hidden="true">{item.id === '01' ? '</>' : item.id === '02' ? '◎' : item.id === '03' ? '⌘' : '4.88'}</span><span className="dimension-word">{item.word}</span><span className="dimension-label">{item.label}</span><span className="open-hint">TAP TO EXPLORE ↗</span></button>)}</div>
-            <p className="map-caption">ONE MIND / MANY POSSIBILITIES</p>
-          </div>
-          <footer className="mind-footer"><span>AFOLAYAN JESUPELUMI</span><span>THE EXPLORATION HAS JUST BEGUN — PORTRAIT STUDY / 02</span></footer>
-        </section>}
+        {fieldVisible && <Field ref={field} quiet={quiet} handoff={handoff} destinationOpen={buildOpen || captureOpen || Boolean(personalOpen) || selected?.id === '04'} onEnter={enterRegion} />}
+
       </main>
       <div className="pixel-journey" aria-hidden="true"><div className="pixel-field">{Array.from({ length: 100 }, (_, i) => <span className="journey-pixel" key={i} style={{ '--pixel-color': i % 5 === 0 ? '#e9a36d' : i % 3 === 0 ? '#f4dfaa' : '#a7c3b1' }} />)}</div><div className="thought-field">{floatingIdeas.map((idea, i) => <span className={`journey-idea journey-idea-${i % 3}`} key={idea.text}>{idea.text}</span>)}</div></div>
+      <div className="silhouette-fragments" aria-hidden="true">{Array.from({ length: 24 }, (_, i) => <span className="silhouette-fragment" key={i} />)}</div>
       <button className="motion-toggle" aria-pressed={quiet} onClick={() => { if (!quiet) timeline.current?.progress(1); setQuiet(!quiet) }}>Motion {quiet ? 'off' : 'on'} <span aria-hidden="true">{quiet ? '○' : '◉'}</span></button>
       <dialog ref={dialog} className={`dimension-dialog ${quiet ? 'dialog-quiet' : ''}`} aria-labelledby="dimension-title" onCancel={(e) => { e.preventDefault(); closeDimension() }} onClick={(e) => { if (e.target === e.currentTarget) closeDimension() }}>
         {selected && <article><div className="dialog-top"><span className="eyebrow">{Number(selected.id) > 4 ? 'PERSONAL SPACE' : 'DIMENSION'} / {selected.id}</span><button className="text-button" onClick={closeDimension} autoFocus>Close ×</button></div><h2 id="dimension-title">{selected.title}</h2><p>{selected.text}</p><div className="tags">{selected.tags.map(tag => <span key={tag}>{tag}</span>)}</div><p className="prototype-note">{Number(selected.id) > 4 ? 'This section is reserved. We’ll fill it in later.' : 'A glimpse for now. The full portfolio follows in the next stage.'}</p></article>}
       </dialog>
     </div>
-    {buildOpen && <ProjectBrowser projects={projects} motionOff={quiet} onMotionChange={() => setQuiet(value => !value)} onClose={() => { setBuildOpen(false); requestAnimationFrame(() => lastTrigger.current?.focus()) }} />}
+    {personalOpen && <PersonalPage section={personalOpen} onSectionChange={setPersonalOpen} onClose={closePersonal} quiet={quiet} onMotionChange={() => setQuiet(value => !value)} />}
+    {buildOpen && <ProjectBrowser projects={projects} motionOff={quiet} onMotionChange={() => setQuiet(value => !value)} onClose={() => { setBuildOpen(false); returnToField() }} />}
     {captureOpen && <PhotoDrum photos={photos} onClose={closeCapture} motionOff={quiet} onMotionChange={() => setQuiet(value => !value)} />}
     </>
   )

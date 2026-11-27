@@ -34,3 +34,6 @@
 @media(max-width:600px){.projects-workspace{padding:0 6% 24px}.projects-masthead{padding:28px 0}.projects-title{font-size:72px}.projects-total{font-size:8px}.projects-rule{display:none}.projects-overview{grid-template-columns:minmax(0,1fr);gap:28px}.project-tile,.project-tile.tile-featured,.project-tile:last-child{grid-column:auto;width:100%}.project-tile .project-frame img{aspect-ratio:1.8}.project-tile .project-placeholder{aspect-ratio:2.5}.tile-copy p,.tile-study .tile-copy p{font-size:13px}.tile-copy h2,.tile-study .tile-copy h2{font-size:28px}}
 @media(max-width:760px){.projects-header{padding:15px 5%;font-size:9px}.project-detail{padding:15px 18px}.project-detail h2{font-size:32px}.project-receipt{padding:20px 16px;font-size:11px}.projects-footer{font-size:8px;padding:15px 5%}}
 @media(prefers-reduced-motion:reduce){.tile-preview,.tile-invitation,.project-tile .project-frame,.tile-copy h2{transition:none!important;transform:none!important}}
+
+/* Shared type hierarchy: bold sans titles, mono metadata, serif only for annotations. */
+.project-detail h2{font:800 38px/1.1 Arial,Helvetica,sans-serif;letter-spacing:-1.6px}.tile-copy h2{font:800 27px/1.12 Arial,Helvetica,sans-serif;letter-spacing:-1.1px}.tile-study .tile-copy h2{font-size:23px}@media(max-width:600px){.tile-copy h2,.tile-study .tile-copy h2{font-size:26px}.project-detail h2{font-size:31px}}
